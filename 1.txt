@@ -1,0 +1,10 @@
+[LightGBM] [Info] Total Bins 7395
+[LightGBM] [Info] Number of data points in the train set: 227845, number of used features: 29
+[LightGBM] [Info] [binary:BoostFromScore]: pavg=0.001729 -> initscore=-6.358339
+[LightGBM] [Info] Start training from score -6.358339
+Training until validation scores don't improve for 50 rounds
+Early stopping, best iteration is:
+[744]	valid_0's binary_logloss: 0.00303095
+Best params found: {'learning_rate': np.float64(0.017336417174259957), 'max_depth': 10, 'num_leaves': 29, 'reg_alpha': 0.5, 'reg_lambda': 0.1}
+Best AUPRC score: 0.8339404829540786
+Model, scaler and test data saved successfully

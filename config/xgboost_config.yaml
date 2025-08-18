@@ -1,0 +1,26 @@
+model_name: 'xgboost'
+
+data_paths:
+  raw_data: '../data/creditcard.csv'
+  X_test_scaled: '../data/X_test_scaled.csv'
+  y_test: '../data/y_test.csv'
+
+model_output_paths:
+  dir: '../models'
+  model: '../models/xgb_model.joblib'
+  scaler: '../models/xgb_scaler.joblib'
+
+preprocessing:
+  test_size: 0.2
+  amount_col: 'Amount'
+
+model_params:
+  n_estimators: 2000
+  learning_rate: 0.05
+  max_depth: 10
+  gamma: 0.1
+  subsample: 0.8
+
+early_stopping:
+  enabled: true
+  stopping_rounds: 50

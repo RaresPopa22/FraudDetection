@@ -1,0 +1,27 @@
+model_name: 'lightgbm'
+
+data_paths:
+  raw_data: '../data/creditcard.csv'
+  X_test_scaled: '../data/X_test_scaled.csv'
+  y_test: '../data/y_test.csv'
+
+model_output_paths:
+  dir: '../models'
+  model: '../models/lgbm_model.joblib'
+  scaler: '../models/lgbm_scaler.joblib'
+
+preprocessing:
+  test_size: 0.2
+  amount_col: 'Amount'
+
+model_params:
+  n_estimators: 2000
+  learning_rate: 0.018
+  num_leaves: 29
+  max_depth: 10
+  reg_alpha: 0.5
+  reg_lambda: 0.1
+
+early_stopping:
+  enabled: true
+  stopping_rounds: 50
