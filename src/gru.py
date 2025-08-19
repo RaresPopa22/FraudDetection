@@ -1,47 +1,50 @@
 import keras_tuner as kt
+import numpy as np
 import pandas as pd
-from keras.src.callbacks import EarlyStopping, ReduceLROnPlateau
+import tensorflow as tf
+from keras.src.callbacks import EarlyStopping
 from keras.src.layers import Bidirectional
 from matplotlib import pyplot as plt
 from sklearn.metrics import classification_report, precision_recall_curve, auc
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from tensorflow.keras.layers import Dense, Input, Dropout, LSTM
+from tensorflow.keras.layers import Dense, Input, Dropout, LSTM, GRU
 from tensorflow.keras.models import Model
 from tensorflow.python.keras.metrics import Precision, Recall
-from imblearn.over_sampling import SMOTE
 from tensorflow.keras.optimizers import Adam
 
-data = pd.read_csv('../data/creditcard.csv')
-scaler = StandardScaler()
-data['scaled_amount'] = scaler.fit_transform(data['Amount'].values.reshape(-1, 1))
-data['scaled_time'] = scaler.fit_transform(data['Time'].values.reshape(-1, 1))
-data = data.drop(['Time', 'Amount'], axis=1)
+gpu_devices = tf.config.list_physical_devices('GPU')
+if gpu_devices:
+    print(f"GPU device(s) found: {gpu_devices}")
+else:
+    print("No GPU devices found. TensorFlow is running on the CPU.")
 
-X = data.drop('Class', axis=1)
-y = data['Class']
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
-smote = SMOTE(random_state=1)
-X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
+BATCH_SIZE = 16384
+NUM_CORES = 12
+tf.config.threading.set_inter_op_parallelism_threads(NUM_CORES)
+tf.config.threading.set_intra_op_parallelism_threads(NUM_CORES)
 
-print(f'X_train_resampled.shape={X_train_resampled.shape}')
-X_train_reshaped = X_train_resampled.values.reshape(X_train_resampled.shape[0], 1, X_train_resampled.shape[1])
-X_test_reshaped = X_test.values.reshape(X_test.shape[0], 1, X_test.shape[1])
+
+print("Loading preprocessed data...")
+data = np.load("../data/preprocessed/preprocess_data.npz")
+X_train_reshaped = data['X_train']
+y_train_resampled = data['y_train']
+X_test_reshaped = data['X_test']
+y_test = data['y_test']
+print("Data loaded successfully")
 
 def build_model(hp):
-    lstm_units_1 = hp.Int('lstm_units_1', min_value=32, max_value=128, step=32)
-    lstm_units_2 = hp.Int('lstm_units_2', min_value=16, max_value=64, step=16)
+    lstm_units_1 = hp.Int('lstm_units_1', min_value=64, max_value=256, step=64)
+    lstm_units_2 = hp.Int('lstm_units_2', min_value=32, max_value=128, step=32)
 
     dropout_rate = hp.Float('dropout_rate', min_value=0.1, max_value=0.5, step=0.1)
 
     learning_rate = hp.Choice('learning_rate', values=[1e-2, 1e-3, 1e-4])
 
     input_layer = Input(shape=(X_train_reshaped.shape[1], X_train_reshaped.shape[2]))
-    x = Bidirectional(LSTM(units=lstm_units_1, return_sequences=True))(input_layer)
+    x = GRU(units=lstm_units_1, return_sequences=True)(input_layer)
     x = Dropout(dropout_rate)(x)
-    x = Bidirectional(LSTM(units=lstm_units_2))(x)
+    x = GRU(units=lstm_units_2)(x)
     x = Dropout(dropout_rate)(x)
     x = Dense(units=16, activation='relu')(x)
     output_layer = Dense(units=1, activation='sigmoid')(x)
@@ -65,18 +68,31 @@ tuner = kt.Hyperband(
     project_name='fraud_detection'
 )
 
+train_dataset = tf.data.Dataset.from_tensor_slices((X_train_reshaped, y_train_resampled))
+train_dataset = train_dataset.cache()
+train_dataset = train_dataset.shuffle(buffer_size=len(X_train_reshaped))
+train_dataset = train_dataset.batch(BATCH_SIZE)
+train_dataset = train_dataset.prefetch(tf.data.AUTOTUNE)
+
+val_dataset = tf.data.Dataset.from_tensor_slices((X_train_reshaped, y_train_resampled))
+val_dataset = val_dataset.batch(BATCH_SIZE)
+val_dataset = val_dataset.cache()
+val_dataset = val_dataset.prefetch(tf.data.AUTOTUNE)
+
 early_stopping = EarlyStopping(monitor='val_loss', patience=5, restore_best_weights=True)
 
 tuner.search(
-    X_train_reshaped,
-    y_train_resampled,
+    train_dataset,
+    validation_data = val_dataset,
     epochs=50,
-    validation_split=0.2,
     callbacks=[early_stopping]
 )
 
 best_hps = tuner.get_best_hyperparameters(num_trials=1)[0]
 model = tuner.get_best_models(num_models=1)[0]
+
+model.save('../models/best_fraud_detection_model.keras')
+print("Best model has been saved successfully")
 
 y_pred_prob = model.predict(X_test_reshaped)
 y_pred = (y_pred_prob > 0.5).astype(int)
