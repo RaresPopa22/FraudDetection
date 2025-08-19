@@ -1,3 +1,7 @@
+keras-tuner
+keras-nightly
+imbalanced-learn
+tensorflow
 seaborn
 joblib==1.5.1
 lightgbm==4.6.0
