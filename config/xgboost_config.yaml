@@ -1,14 +1,9 @@
 model_name: 'xgboost'
 
-data_paths:
-  raw_data: '../data/creditcard.csv'
-  X_test_scaled: '../data/X_test_scaled.csv'
-  y_test: '../data/y_test.csv'
-
 model_output_paths:
   dir: '../models'
-  model: '../models/xgb_model.joblib'
-  scaler: '../models/xgb_scaler.joblib'
+  model: '../models/xgboost.joblib'
+  scaler: '../models/xgboost_scaler.joblib'
 
 preprocessing:
   test_size: 0.2

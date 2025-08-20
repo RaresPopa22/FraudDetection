@@ -1,0 +1,8 @@
+models:
+  tree: xgboost, lightgbm
+  sequential: gru
+
+data_paths:
+  raw_data: '../data/creditcard.csv'
+  X_test: '../data/X_test_scaled.csv'
+  y_test: '../data/y_test.csv'
