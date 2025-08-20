@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 import yaml
 
@@ -55,9 +54,4 @@ def preprocess_data_tree(config):
 
     return X_train_scaled, y_train, X_train_eval, y_train_eval, X_test, y_test
 
-def preprocess_data_gru(config):
-    X_train_resampled, y_train_resampled, X_test, y_test = preprocess_data(config)
-    X_train_reshaped = X_train_resampled.values.reshape(X_train_resampled.shape[0], 1, X_train_resampled.shape[1])
-
-    return X_train_reshaped, y_train_resampled, X_test, y_test
 

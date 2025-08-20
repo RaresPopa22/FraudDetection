@@ -1,6 +1,5 @@
 models:
   tree: xgboost, lightgbm
-  sequential: gru
 
 data_paths:
   raw_data: '../data/creditcard.csv'

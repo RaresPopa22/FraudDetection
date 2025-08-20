@@ -10,7 +10,6 @@ from sklearn.metrics import precision_recall_curve, classification_report, avera
 from tensorflow.keras.metrics import Precision, Recall
 
 from src.data_processing import load_test_data, read_config
-from src.utils import is_tree_model, is_sequential_model
 
 
 def plot_precision_recall_curve(recalls, precisions, labels, auprcs):
@@ -46,22 +45,12 @@ def evaluate_models(base_config, model_paths):
 
         print(f"Evaluating Model: {model_path.name}")
 
-        if is_tree_model(base_config):
-            model = joblib.load(model_path)
-            y_pred = model.predict(X_test)
-            y_pred_proba = model.predict_proba(X_test)[:, 1]
-            precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
-            auprc = average_precision_score(y_test, y_pred_proba)
-            auprcs.append(auprc)
-        elif is_sequential_model(base_config):
-            model = tf.keras.models.load_model(model_path, custom_objects={'Precision': Precision, 'Recall': Recall})
-            X_test_np = X_test.values
-            X_test_reshaped = X_test_np.reshape(X_test.shape[0], 1, X_test.shape[1])
-            y_pred_prob = model.predict(X_test_reshaped)
-            y_pred = (y_pred_prob > 0.5).astype(int)
-            precision, recall, _ = precision_recall_curve(y_test, y_pred_prob)
-            auprc = auc(recall, precision)
-            auprcs.append(auprc)
+        model = joblib.load(model_path)
+        y_pred = model.predict(X_test)
+        y_pred_proba = model.predict_proba(X_test)[:, 1]
+        precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
+        auprc = average_precision_score(y_test, y_pred_proba)
+        auprcs.append(auprc)
 
         report = classification_report(y_test, y_pred, target_names=['Non Fraud', 'Fraud'])
         print('Classification Report:')

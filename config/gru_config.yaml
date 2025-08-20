@@ -1,9 +1,0 @@
-model_name: 'gru'
-
-model_output_paths:
-  dir: '../models'
-  model: '../models/gru.keras'
-
-batch_size: 16384
-
-num_cores: 12
