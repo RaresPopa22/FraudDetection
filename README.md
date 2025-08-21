@@ -184,3 +184,18 @@ Model
 lightgbm  0.8850   0.9748  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, ...  [0.0017204452090867595, 0.0017204754130018785,...             0.835
 xgboost   0.8976   0.9831  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, ...  [0.0017204452090867595, 0.0017204754130018785,...             0.823
 ```
+And lastly the learning_curves with `--tune` argument.
+
+The XGBoost model:
+![img_1.png](img_1.png)
+
+This plot shows the Area Under the Curve (AUC) score for the XGBoost model on the eval set. The curve demonstrates that
+the model's performance improves rapidly, in the initial ~130 rounds and then begins to plateau. This proves an efficient 
+training process where the model quickly learns the key patterns in the data and converges to a point of optimal perfomance,
+with early stopping preventing unnecessary further training and even overfitting.
+
+The LGBM model:
+![img_2.png](img_2.png)
+
+This learning curve also tracks the AUC score. Similar to XGBoost model we can see a steep increase in performance at the
+beginning which then flattens out as the training progresses.
