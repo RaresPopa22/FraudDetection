@@ -1,22 +1,25 @@
 model_name: 'lightgbm'
 
 model_output_paths:
-  dir: '../models'
-  model: '../models/lightgbm.joblib'
-  scaler: '../models/lightgbm_scaler.joblib'
+  dir: 'models'
+  model: 'models/lightgbm.joblib'
+  scaler: 'models/lightgbm_scaler.joblib'
 
 preprocessing:
   test_size: 0.2
   amount_col: 'Amount'
 
 model_params:
-  n_estimators: 2000
-  learning_rate: 0.018
-  num_leaves: 29
-  max_depth: 10
-  reg_alpha: 0.5
-  reg_lambda: 0.1
+  fixed:
+    n_estimators: 2000
+    learning_rate: 0.117
+    num_leaves: 63
+    max_depth: 7
+  tune:
+    learning_rate: [0.01, 0.2]
+    num_leaves: [20, 300]
+    max_depth: [3, 11]
 
 early_stopping:
-  enabled: true
+  enabled: True
   stopping_rounds: 50

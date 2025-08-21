@@ -1,21 +1,23 @@
 model_name: 'xgboost'
 
 model_output_paths:
-  dir: '../models'
-  model: '../models/xgboost.joblib'
-  scaler: '../models/xgboost_scaler.joblib'
+  dir: 'models'
+  model: 'models/xgboost.joblib'
+  scaler: 'models/xgboost_scaler.joblib'
 
 preprocessing:
   test_size: 0.2
   amount_col: 'Amount'
 
 model_params:
-  n_estimators: 2000
-  learning_rate: 0.05
-  max_depth: 10
-  gamma: 0.1
-  subsample: 0.8
+  fixed:
+    n_estimators: 2000
+    learning_rate: 0.163
+    max_depth: 9
+  tune:
+    learning_rate: [0.01, 0.2]
+    max_depth: [3, 11]
 
 early_stopping:
-  enabled: true
+  enabled: True
   stopping_rounds: 50

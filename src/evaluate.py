@@ -1,13 +1,11 @@
 import argparse
 import joblib
 import pandas as pd
-import tensorflow as tf
 
 from pathlib import Path
 from matplotlib import pyplot as plt
 from sklearn.metrics import precision_recall_curve, classification_report, average_precision_score, roc_auc_score, \
-    f1_score, auc
-from tensorflow.keras.metrics import Precision, Recall
+    f1_score
 
 from src.data_processing import load_test_data, read_config
 
@@ -77,7 +75,7 @@ def evaluate_models(base_config, model_paths):
     plot_precision_recall_curve(recalls, precisions, labels, auprcs)
 
 if __name__ == '__main__':
-    base_config = read_config("../config/base_config.yaml")
+    base_config = read_config("config/base_config.yaml")
     parser = argparse.ArgumentParser(description='Evaluate and compare trained models')
     parser.add_argument('--models', nargs="+", required=True, help='Paths to model files')
     parser.add_argument('--x-test', required=True, help='Paths to X_test_scaled.csv')

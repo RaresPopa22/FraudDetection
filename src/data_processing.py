@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 import yaml
 
@@ -28,30 +29,32 @@ def load_test_data(config):
 
     return X_test, y_test.squeeze()
 
+def feature_engineer(data):
+    data['Hour'] = data['Time'].apply(lambda x: np.floor(x / 3600))
+    data['Hour_sin'] = np.sin(2 * np.pi * data['Hour'] / 23.0)
+    data['Hour_cos'] = np.sin(2 * np.pi * data['Hour'] / 23.0)
+    data.drop('Hour', axis=1, inplace=True)
+    data.drop('Time', axis=1, inplace=True)
+
+    return data
+
 def preprocess_data(config):
     data = load_data(config['data_paths']['raw_data'])
     scaler = StandardScaler()
     data['scaled_amount'] = scaler.fit_transform(data['Amount'].values.reshape(-1, 1))
-    data['scaled_time'] = scaler.fit_transform(data['Time'].values.reshape(-1, 1))
-    data = data.drop(['Time', 'Amount'], axis=1)
+    data = feature_engineer(data)
+    data = data.drop('Amount', axis=1)
 
     X = data.drop('Class', axis=1)
     y = data['Class']
-
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
+    return X_train, X_test, y_train, y_test
+
+def apply_SMOTE(X_train, y_train):
     smote = SMOTE(random_state=1)
     X_train_resampled, y_train_resampled = smote.fit_resample(X_train, y_train)
 
-    return X_train_resampled, y_train_resampled, X_test, y_test
-
-def preprocess_data_tree(config):
-    X_train_resampled, y_train_resampled, X_test, y_test = preprocess_data(config)
-
-    X_train_scaled, X_train_eval, y_train, y_train_eval = train_test_split(
-        X_train_resampled, y_train_resampled, test_size=0.15, random_state=1, stratify=y_train_resampled
-    )
-
-    return X_train_scaled, y_train, X_train_eval, y_train_eval, X_test, y_test
+    return X_train_resampled, y_train_resampled
 
 
