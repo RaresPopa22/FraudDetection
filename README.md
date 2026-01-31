@@ -42,6 +42,9 @@ Regarding the model training, this project implements a training pipeline for tw
 of problem, tree-based models:
 * XGBoost
 * LightGBM
+* CatBoost
+* Random Forest
+* Ensemble
 
 To evaluate the models I used as also recommended by the Kaggle team, I used for accuracy the Area Under the 
 Precision-Recall Curve (AUPRC). Due to the nature of extreme class imbalance other choices, like the naive accuracy or 
@@ -54,7 +57,10 @@ confusion matrix aren't good enough here. The sheer number of non-fraudulent tra
 ├── README.md
 ├── config
 │   ├── base_config.yaml
+│   ├── catboost.yaml
+│   ├── ensemble.yaml
 │   ├── lgbm_config.yaml
+│   ├── random_forest.yaml
 │   └── xgboost_config.yaml
 ├── data
 │   ├── X_test_scaled.csv
@@ -63,9 +69,20 @@ confusion matrix aren't good enough here. The sheer number of non-fraudulent tra
 │   │   ├── preprocess_data.npz
 │   │   └── test_data.npz
 │   └── y_test.csv
+├── final_eval.png
 ├── models
+│   ├── catboost.joblib
+│   ├── catboost_scaler.joblib
+│   ├── ensemble.joblib
+│   ├── ensemble_scaler.joblib
 │   ├── lightgbm.joblib
-│   └── xgboost.joblib
+│   ├── lightgbm_scaler.joblib
+│   ├── mlp.joblib
+│   ├── mlp_scaler.joblib
+│   ├── random_forest.joblib
+│   ├── random_forest_scaler.joblib
+│   ├── xgboost.joblib
+│   └── xgboost_scaler.joblib
 ├── notebooks
 │   └── 01_Exploratory_Data_Analysis.ipynb
 ├── requirements.txt
@@ -74,6 +91,7 @@ confusion matrix aren't good enough here. The sheer number of non-fraudulent tra
     ├── evaluate.py
     ├── models
     │   └── tree_model.py
+    ├── predict.py
     └── train.py
 ```
 
@@ -149,7 +167,7 @@ The Precision-Recall curve visualizes the trade-off between precision and recall
 a curve closer to the top right corner indicates a better performance. As seen below, they all did well, confirming their 
 efficiency in identifying fraudulent transactions, while minimizing false positives.
 
-![img.png](img.png)
+![img.png](final_eval.png)
 
 
 Raw report:
