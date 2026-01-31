@@ -1,9 +1,9 @@
-model_name: 'xgboost'
+model_name: 'catboost'
 
 model_output_paths:
   dir: 'models'
-  model: 'models/xgboost.joblib'
-  scaler: 'models/xgboost_scaler.joblib'
+  model: 'models/catboost.joblib'
+  scaler: 'models/catboost_scaler.joblib'
 
 preprocessing:
   test_size: 0.2
@@ -11,9 +11,10 @@ preprocessing:
   amount_col: 'Amount'
 
 model_params:
-  n_estimators: 3000
-  learning_rate: 0.025
-  max_depth: 35
+  iterations: 2000
+  depth: 16
+  learning_rate: 0.01
+  subsample: 0.5
 
 early_stopping:
   enabled: True
