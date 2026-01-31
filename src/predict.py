@@ -36,4 +36,9 @@ if __name__ == '__main__':
     parser.add_argument('--output', required=True, help='Path to save prediction in CSV format')
     args = parser.parse_args()
 
-    preds, probas = predict(args.model, args.scalar, args.input, args.threshold)
+    preds, probas = predict(args.model, args.scaler, args.input, args.threshold)
+    results = pd.DataFrame({
+        'predictions': preds,
+        'fraud_probability': probas
+    })
+    results.to_csv(args.output, index=False)
