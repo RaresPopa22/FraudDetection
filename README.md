@@ -1,6 +1,6 @@
 # Credit Card Fraud Detection
 
-This repository contains a project based on the famous Kaggle Credi Card Fraud dataset, that can be found here 
+This repository contains a project based on the famous Kaggle Credit Card Fraud dataset, that can be found here 
 https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud/data.
 The main focus here was to detect fraudulent credit card transactions using machine learning. What I did next was to build
 and evaluate models that can accurately identify fraudulent transactions from a notoriously highly imbalanced set.
@@ -21,9 +21,8 @@ This project focuses on the detection of credit card fraud. The dataset used is 
 from Kaggle, which is known for its severe class imbalance, with fraudulent transactions making up only a tiny fraction
 of the data (0.17%).
 
-This project tries to explore the data, engineer relevant features, and trains two models: XGBoost and LightGBM. Some 
-techniques were used, like SMOTE (Synthetic Minority Over-sampling Technique), in order to address the class imbalance
-and improve the model performance.
+This project tries to explore the data, engineer relevant features, and trains several models: XGBoost, LightGBM, CatBoost,
+RandomForest and an ensemble model, a VotingClassifier.
 
 ### Features
 
@@ -33,11 +32,11 @@ transactions.
 
 In [data_processing.py](src/data_processing.py) I tried to implement some feature engineering. The 'Time' feature is
 transformed into cyclical features ('Hour_sin', 'Hour_cos') in order to capture the time of the day when the transaction
-happened, which can be a valuable insight in fraud detection.
+happened, which can be a valuable insight in fraud detection. I selected the top seven features with the strongest negative correlation
+with the target(Class). I then engineered interactions between them, products, polynomial terms, and aggregate statistics, like
+mean, median, max and so on, across these features. The end goal was to amplify the separability between normal and fraudulent
+transactions distributions, by capturing non-linear relationships the base features alone might not express.  
 
-The SMOTE technique mentioned also earlier, can be found in the same file, and is applied to the training data in order 
-to enhance the minority class, here the frauds, helping the models to learn the characteristics of fraudulent transactions
-maybe more easily.
 
 Regarding the model training, this project implements a training pipeline for two popular and I think suited for this kind
 of problem, tree-based models:
@@ -103,7 +102,7 @@ In order to get this up and running please do the following:
 3. Download the dataset
     Download the dataset 'Credit Card Fraud' from [Kaggle](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud/data#:~:text=Download)
 
-### Usage
+#### Usage
 
 You can choose to train the models, or use the saved models, and evaluate their performance using the script in the src/
 directory.
@@ -117,12 +116,10 @@ In order to train a model, run the `train.py` script with the desired configurat
 * Train LightGBM
     `python -m src.train --config config/lgbm_config.yaml`
 
-If you want to tune yourself the params, please add the `--tune` flag to your train model command.
-
 #### Evaluating the models
 
 After training, you can evaluate and compare the models using the evaluate.py script:
-` python -m src.evaluate --models models/lightgbm.joblib models/xgboost.joblib --x-test data/X_test_scaled.csv --y-test data/y_test.csv`
+`python -m src.evaluate --models models/lightgbm.joblib models/xgboost.joblib`
 
 This will print a classification report for each model, a comparison summary, and will plot a Precision-Recall curve plot.
 
@@ -138,16 +135,18 @@ This project uses YAML files for configuration, making it easy to manage model p
 The models were evaluated on a held-out test set to assess their real-world performance on unseen data. Given the highly
 imbalanced nature of the dataset, the Area Under Precision-Recall Curve (AUPRC) is the metric used for comparison.
 
-The table below summarizes the performance of the two models. Both they did kinda good, with XGBoost having a slight edge
-here.
+The table below summarizes the performance of the models. XGBoost having a comfortable edge here.
 
-| Model   | AUPRC  | ROC AUC      | Recall (Fraud) | Precision (Fraud) | F1-Score (Fraud) |
-|---------|--------|--------------|----------------|-------------------|------------------|
-| XGBoost | 0.8976 | 0.974 |  0.88 | 0.77 |  0.82 |
-| LGBM    | 0.8850 |  0.9831 |  0.88 |  0.80  | 0.83 |
+| Model         | AUPRC  | ROC AUC     | Recall (Fraud) | Precision (Fraud) | F1-Score (Fraud) |
+|---------------|--------|-------------|----------------|-----------------|------------------|
+| XGBoost       |  0.9136 | 0.9830  |  0.8571 | 0.9545 |  0.9032 |
+| LGBM          | 0.8806 |  0.9440 |  0.8571 |  0.9438  | 0.8984 |
+| CATBOOST      | 0.8511 |  0.9803 |  0.8673 |  0.8673  | 0.8673 |
+| RANDOM_FOREST | 0.8906 |  0.9732 |  0.8673 |  0.9140  | 0.8901 |
+| ENSEMBLE      | 0.9054 |  0.9825 |  0.8878 |  0.9255  | 0.9062 |
 
 The Precision-Recall curve visualizes the trade-off between precision and recall for different thresholds. A model with
-a curve closer to the top right corner indicates a better performance. As seen below, both did well, confirming their 
+a curve closer to the top right corner indicates a better performance. As seen below, they all did well, confirming their 
 efficiency in identifying fraudulent transactions, while minimizing false positives.
 
 ![img.png](img.png)
@@ -155,47 +154,12 @@ efficiency in identifying fraudulent transactions, while minimizing false positi
 
 Raw report:
 ```
-Loaded test data. X_test shape: (56962, 31), y_test shape: (56962,)
-Evaluating Model: lightgbm.joblib
-Classification Report:
-              precision    recall  f1-score   support
-
-   Non Fraud       1.00      1.00      1.00     56864
-       Fraud       0.80      0.88      0.83        98
-
-    accuracy                           1.00     56962
-   macro avg       0.90      0.94      0.92     56962
-weighted avg       1.00      1.00      1.00     56962
-
-Evaluating Model: xgboost.joblib
-Classification Report:
-              precision    recall  f1-score   support
-
-   Non Fraud       1.00      1.00      1.00     56864
-       Fraud       0.77      0.88      0.82        98
-
-    accuracy                           1.00     56962
-   macro avg       0.89      0.94      0.91     56962
-weighted avg       1.00      1.00      1.00     56962
-
-Model Comparison Summary
-           AURPC  ROC AUC                                     Recall (Fraud)                                  Precision (Fraud)  F1-Score (Fraud)
-Model                                                                                                                                            
-lightgbm  0.8850   0.9748  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, ...  [0.0017204452090867595, 0.0017204754130018785,...             0.835
-xgboost   0.8976   0.9831  [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, ...  [0.0017204452090867595, 0.0017204754130018785,...             0.823
+INFO:__main__:Model Comparison Summary
+INFO:__main__:                AUPRC  ROC AUC  Recall (Fraud)  Precision (Fraud)  F1-Score (Fraud)
+Model                                                                              
+ensemble       0.9054   0.9825          0.8878             0.9255            0.9062
+catboost       0.8511   0.9803          0.8673             0.8673            0.8673
+lightgbm       0.8806   0.9440          0.8571             0.9438            0.8984
+random_forest  0.8906   0.9732          0.8673             0.9140            0.8901
+xgboost        0.9136   0.9830          0.8571             0.9545            0.9032
 ```
-And lastly the learning_curves with `--tune` argument.
-
-The XGBoost model:
-![img_1.png](img_1.png)
-
-This plot shows the Area Under the Curve (AUC) score for the XGBoost model on the eval set. The curve demonstrates that
-the model's performance improves rapidly, in the initial ~130 rounds and then begins to plateau. This proves an efficient 
-training process where the model quickly learns the key patterns in the data and converges to a point of optimal perfomance,
-with early stopping preventing unnecessary further training and even overfitting.
-
-The LGBM model:
-![img_2.png](img_2.png)
-
-This learning curve also tracks the AUC score. Similar to XGBoost model we can see a steep increase in performance at the
-beginning which then flattens out as the training progresses.

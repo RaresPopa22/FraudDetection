@@ -1,0 +1,18 @@
+model_name: 'random_forest'
+
+model_output_paths:
+  dir: 'models'
+  model: 'models/random_forest.joblib'
+  scaler: 'models/random_forest_scaler.joblib'
+
+preprocessing:
+  test_size: 0.2
+  eval_size: 0.15
+  amount_col: 'Amount'
+
+model_params:
+  n_estimators: 500
+  max_depth: 30
+  min_samples_leaf: 5
+  min_samples_split: 10
+  max_features: sqrt

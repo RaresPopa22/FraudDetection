@@ -1,13 +1,25 @@
 import argparse
-import joblib
-import pandas as pd
-
+import logging
 from pathlib import Path
+
+import joblib
+import numpy as np
+import pandas as pd
 from matplotlib import pyplot as plt
-from sklearn.metrics import precision_recall_curve, classification_report, average_precision_score, roc_auc_score, \
-    f1_score
+from sklearn.metrics import (precision_recall_curve, classification_report, average_precision_score,
+                             roc_auc_score, f1_score, recall_score, precision_score)
 
 from src.data_processing import load_test_data, read_config
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def find_optimal_threshold(y_true, y_pred_proba):
+    precision, recall, thresholds = precision_recall_curve(y_true, y_pred_proba)
+    f1_scores = 2 * (precision[:-1] * recall[:-1]) / (precision[:-1] + recall[:-1] + 1e-8)
+    best_idx = np.argmax(f1_scores)
+    return thresholds[best_idx]
 
 
 def plot_precision_recall_curve(recalls, precisions, labels, auprcs):
@@ -22,10 +34,11 @@ def plot_precision_recall_curve(recalls, precisions, labels, auprcs):
     ax.legend(loc='lower left')
     plt.show()
 
+
 def evaluate_models(base_config, model_paths):
     X_test, y_test = load_test_data(base_config)
 
-    print(f"Loaded test data. X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
+    logger.info(f"Loaded test data. X_test shape: {X_test.shape}, y_test shape: {y_test.shape}")
 
     results = []
     precisions = []
@@ -33,26 +46,32 @@ def evaluate_models(base_config, model_paths):
     labels = []
     auprcs = []
 
+    res = {}
+
     for path in model_paths:
         model_path = Path(path)
+
         base_config['model_name'] = model_path.stem
 
         if not model_path.exists():
-            print(f"Model file not found at {model_path}. Skipping...")
+            logger.info(f"Model file not found at {model_path}. Skipping...")
             continue
 
-        print(f"Evaluating Model: {model_path.name}")
+        logger.info(f"Evaluating Model: {model_path.name}")
 
         model = joblib.load(model_path)
-        y_pred = model.predict(X_test)
         y_pred_proba = model.predict_proba(X_test)[:, 1]
+        res[model_path.stem] = y_pred_proba
+
+        threshold = find_optimal_threshold(y_test, y_pred_proba)
+        y_pred = (y_pred_proba >= threshold).astype(int)
         precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
         auprc = average_precision_score(y_test, y_pred_proba)
         auprcs.append(auprc)
 
         report = classification_report(y_test, y_pred, target_names=['Non Fraud', 'Fraud'])
-        print('Classification Report:')
-        print(report)
+        logger.info('Classification Report:')
+        logger.info(report)
 
         recalls.append(recall)
         precisions.append(precision)
@@ -60,29 +79,26 @@ def evaluate_models(base_config, model_paths):
 
         results.append({
             'Model': model_path.stem,
-            'AURPC': auprc,
+            'AUPRC': auprc,
             'ROC AUC': roc_auc_score(y_test, y_pred_proba),
-            'Recall (Fraud)': recall,
-            'Precision (Fraud)': precision,
+            'Recall (Fraud)': recall_score(y_test, y_pred, pos_label=1),
+            'Precision (Fraud)': precision_score(y_test, y_pred, pos_label=1),
             'F1-Score (Fraud)': f1_score(y_test, y_pred, pos_label=1)
         })
 
     if results:
-        print(f'Model Comparison Summary')
+        logger.info(f'Model Comparison Summary')
         results_df = pd.DataFrame(results).set_index('Model')
-        print(results_df.round(4))
+        logger.info(results_df.round(4))
 
     plot_precision_recall_curve(recalls, precisions, labels, auprcs)
 
+
 if __name__ == '__main__':
-    base_config = read_config("config/base_config.yaml")
+    base_config_path = Path(__file__).parent.parent / 'config' / 'base_config.yaml'
+    base_config = read_config(base_config_path)
     parser = argparse.ArgumentParser(description='Evaluate and compare trained models')
     parser.add_argument('--models', nargs="+", required=True, help='Paths to model files')
-    parser.add_argument('--x-test', required=True, help='Paths to X_test_scaled.csv')
-    parser.add_argument('--y-test', required=True, help='Paths to y_test.csv')
 
     args = parser.parse_args()
     evaluate_models(base_config, args.models)
-
-
-

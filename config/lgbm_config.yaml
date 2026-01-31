@@ -7,19 +7,16 @@ model_output_paths:
 
 preprocessing:
   test_size: 0.2
+  eval_size: 0.15
   amount_col: 'Amount'
 
 model_params:
-  fixed:
-    n_estimators: 2000
-    learning_rate: 0.117
-    num_leaves: 63
-    max_depth: 7
-  tune:
-    learning_rate: [0.01, 0.2]
-    num_leaves: [20, 300]
-    max_depth: [3, 11]
+  n_estimators: 5000
+  learning_rate: 0.001
+  num_leaves: 500
+  max_depth: 200
+  min_child_samples: 20
 
 early_stopping:
   enabled: True
-  stopping_rounds: 50
+  stopping_rounds: 75
