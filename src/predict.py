@@ -14,8 +14,8 @@ def predict(model_path, scalar_path, input_path, threshold=0.5):
     scaler = joblib.load(scalar_path)
 
     data = pd.read_csv(input_path)
-    data['scaled_amount'] = scaler.transform(data['Amount'].values.reshape(-1, 1))
     data = feature_engineer(data)
+    data['scaled_amount'] = scaler.transform(data[['Amount']])
     data = data.drop('Amount', axis=1)
 
     if 'Class' in data.columns:
