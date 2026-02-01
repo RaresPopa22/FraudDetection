@@ -14,8 +14,8 @@ def predict(model_path, scalar_path, input_path, threshold=0.5):
     scaler = joblib.load(scalar_path)
 
     data = pd.read_csv(input_path)
-    data['scaled_amount'] = scaler.transform(data['Amount'].values.reshape(-1, 1))
     data = feature_engineer(data)
+    data['scaled_amount'] = scaler.transform(data[['Amount']])
     data = data.drop('Amount', axis=1)
 
     if 'Class' in data.columns:
@@ -36,4 +36,9 @@ if __name__ == '__main__':
     parser.add_argument('--output', required=True, help='Path to save prediction in CSV format')
     args = parser.parse_args()
 
-    preds, probas = predict(args.model, args.scalar, args.input, args.threshold)
+    preds, probas = predict(args.model, args.scaler, args.input, args.threshold)
+    results = pd.DataFrame({
+        'predictions': preds,
+        'fraud_probability': probas
+    })
+    results.to_csv(args.output, index=False)
