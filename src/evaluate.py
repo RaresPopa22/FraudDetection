@@ -1,4 +1,5 @@
 import argparse
+import json
 import logging
 from pathlib import Path
 
@@ -64,6 +65,10 @@ def evaluate_models(base_config, model_paths):
         res[model_path.stem] = y_pred_proba
 
         threshold = find_optimal_threshold(y_test, y_pred_proba)
+        threshold_path =  'models/' + model_path.stem + '_threshold.json'
+        with open(threshold_path, 'w') as f:
+            json.dump({'threshold': float(threshold)}, f)
+
         y_pred = (y_pred_proba >= threshold).astype(int)
         precision, recall, _ = precision_recall_curve(y_test, y_pred_proba)
         auprc = average_precision_score(y_test, y_pred_proba)
