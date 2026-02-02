@@ -9,11 +9,8 @@ from src.data_processing import feature_engineer
 logger = logging.getLogger(__name__)
 
 
-def predict(model_path, scalar_path, input_path, threshold=0.5):
-    model = joblib.load(model_path)
-    scaler = joblib.load(scalar_path)
-
-    data = pd.read_csv(input_path)
+def predict_from_dataframe(model, scaler, data: pd.DataFrame, threshold=0.5):
+    data = data.copy()
     data = feature_engineer(data)
     data['scaled_amount'] = scaler.transform(data[['Amount']])
     data = data.drop('Amount', axis=1)
@@ -25,6 +22,14 @@ def predict(model_path, scalar_path, input_path, threshold=0.5):
     y_pred = (y_pred_proba >= threshold).astype(int)
 
     return y_pred, y_pred_proba
+
+
+def predict(model_path, scaler_path, input_path, threshold=0.5):
+    model = joblib.load(model_path)
+    scaler = joblib.load(scaler_path)
+    data = pd.read_csv(input_path)
+
+    return predict(model, scaler, data, threshold)
 
 
 if __name__ == '__main__':

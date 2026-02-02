@@ -74,8 +74,8 @@ def preprocess_data(config):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=1, stratify=y)
 
     scaler = StandardScaler()
-    X_train['scaled_amount'] = scaler.fit_transform(X_train['Amount'].values.reshape(-1, 1))
-    X_test['scaled_amount'] = scaler.transform(X_test['Amount'].values.reshape(-1, 1))
+    X_train['scaled_amount'] = scaler.fit_transform(X_train[['Amount']])
+    X_test['scaled_amount'] = scaler.transform(X_test[['Amount']])
     X_train = X_train.drop('Amount', axis=1)
     X_test = X_test.drop('Amount', axis=1)
 
