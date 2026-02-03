@@ -1,4 +1,3 @@
-import json
 from http.client import HTTPException
 from pathlib import Path
 
@@ -80,11 +79,7 @@ def predict_batch(transactions: list[Transaction]):
         raise HTTPException(400, f'Max batch size is {transactions}')
 
     data = pd.DataFrame([t.model_dump() for t in transactions])
-
-    with open(THRESHOLD_PATH) as f:
-        threshold = json.load(f)['threshold']
-
-    _, probas = predict_from_dataframe(model, scaler, data, threshold)
+    _, probas = predict_from_dataframe(model, scaler, data)
 
     return [
         PredictionResult(
