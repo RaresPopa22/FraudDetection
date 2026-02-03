@@ -29,7 +29,7 @@ def predict(model_path, scaler_path, input_path, threshold=0.5):
     scaler = joblib.load(scaler_path)
     data = pd.read_csv(input_path)
 
-    return predict(model, scaler, data, threshold)
+    return predict_from_dataframe(model, scaler, data, threshold)
 
 
 if __name__ == '__main__':
