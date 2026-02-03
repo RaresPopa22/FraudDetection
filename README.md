@@ -130,9 +130,13 @@ directory.
 In order to train a model, run the `train.py` script with the desired configuration:
 
 * Train XGBoost
-    `python -m src.train --config config/xgboost_config.yaml`
+    ```bash
+    python -m src.train --config config/xgboost_config.yaml
+  ```
 * Train LightGBM
-    `python -m src.train --config config/lgbm_config.yaml`
+    ```bash
+    python -m src.train --config config/lgbm_config.yaml
+    ```
 
 #### Evaluating the models
 
@@ -169,7 +173,6 @@ efficiency in identifying fraudulent transactions, while minimizing false positi
 
 ![img.png](final_eval.png)
 
-
 Raw report:
 ```
 INFO:__main__:Model Comparison Summary
@@ -181,3 +184,108 @@ lightgbm       0.8806   0.9440          0.8571             0.9438            0.8
 random_forest  0.8906   0.9732          0.8673             0.9140            0.8901
 xgboost        0.9136   0.9830          0.8571             0.9545            0.9032
 ```
+
+
+### Prediction
+
+Beyond training and evaluation, I wanted to make the models usable for real-world inference. The [predict.py](src/predict.py)
+script allows you to run predictions on your own CSV files, as long as they follow the same structure as the original dataset.
+This is useful for batch processing new transactions through any of the trained models.
+
+An example usage would be:
+
+```bash
+python -m src.predict --input input.csv --model models/xgboost.joblib --scaler models/xgboost_scaler.joblib --output output.csv
+```
+
+The script accepts the following arguments:
+
+| Argument | Required | Description |
+|----------|----------|-------------|
+| `--input` | Yes | Input CSV file (must match original dataset format) |
+| `--model` | Yes | Path to trained model (.joblib) |
+| `--scaler` | Yes | Path to corresponding scaler (.joblib) |
+| `--output` | Yes | Output CSV path for predictions |
+| `--threshold` | No | Classification threshold (default: 0.5) |
+
+The threshold parameter is particularly important here - by adjusting it, you can trade off between catching more frauds
+(higher recall) versus reducing false alarms (higher precision), depending on the business requirements.
+
+### API
+
+To take this project a step further, I built a REST API using FastAPI that serves the XGBoost model, since it showed the
+best performance during evaluation. The idea was to simulate how such a model might be deployed in a production environment,
+where transactions could be scored in real-time.
+
+The API exposes three endpoints:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health` | GET | Simple health check to verify the service is running |
+| `/predict` | POST | Score a single transaction |
+| `/predict/batch` | POST | Score multiple transactions at once |
+
+#### Response Format
+
+Each prediction returns a JSON object with the fraud probability and a human-readable recommendation:
+
+```json
+{
+  "index": 0,
+  "fraud_probability": 0.00002,
+  "recommendation": "approve"
+}
+```
+
+The `recommendation` field returns either `"approve"` for legitimate transactions or `"review"` for those flagged as
+potentially fraudulent. For batch requests, the `index` field helps match each prediction back to its corresponding
+input transaction.
+
+#### Running Locally
+
+To spin up the API locally, simply run:
+
+```bash
+fastapi dev api/app.py
+```
+
+This starts a development server on port 8000. You can verify everything is working by hitting the health endpoint:
+
+```bash
+curl localhost:8000/health
+```
+
+#### Example Request
+
+Here's an example of scoring a single transaction. The request body should contain all the features from the original
+dataset (Time, V1-V28, and Amount):
+
+```bash
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"Time": 0.0, "V1": -1.36, "V2": -0.07, "V3": 2.54, "V4": 1.38, "V5": -0.34, "V6": 0.46, "V7": 0.24, "V8": 0.10, "V9": 0.36, "V10": 0.09, "V11": -0.55, "V12": -0.62, "V13": -0.99, "V14": -0.31, "V15": 1.47, "V16": -0.47, "V17": 0.21, "V18": 0.03, "V19": 0.40, "V20": 0.25, "V21": -0.02, "V22": 0.28, "V23": -0.11, "V24": 0.07, "V25": 0.13, "V26": -0.19, "V27": 0.13, "V28": -0.02, "Amount": 149.62}'
+```
+
+For batch predictions, you can send an array of transaction objects to `/predict/batch`, which is more efficient when
+processing multiple transactions at once.
+
+#### Production Deployment
+
+I also deployed the API to Railway to demonstrate a full end-to-end workflow. The service is configured to auto-deploy
+whenever new code is pushed to the `main` branch, which mimics a real CI/CD pipeline. A Dockerfile handles the build
+process, ensuring consistent environments between local development and production.
+
+The live API can be accessed at:
+
+```
+https://frauddetection-production-12ae.up.railway.app
+```
+
+You can use the same endpoints and request format as the local version - just swap out `localhost:8000` for the
+production URL.
+
+### CI/CD
+
+To ensure code quality and catch issues early, I set up a GitHub Actions workflow in [ci.yaml](.github/workflows/ci.yaml).
+The pipeline runs automatically on every push and pull request, executing the test suite to verify that changes don't
+break existing functionality. 
